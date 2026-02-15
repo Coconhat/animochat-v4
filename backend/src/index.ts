@@ -5,9 +5,14 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import cors from "cors";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-// Ensure these match your actual file paths for imports
-import { initRedis, pubClient, subClient, redisClient } from "./lib/redis";
-import { saveUser, removeUser, getUser, deleteRoom } from "./services/store";
+import { initRedis, pubClient, subClient } from "./lib/redis";
+import { saveUser, removeUser } from "./services/store";
+import {
+  findMatch,
+  handleLeaveMatch,
+  handleDisconnect,
+  cleanupGhostUsers,
+} from "./services/matchmaking";
 
 dotenv.config();
 
@@ -15,7 +20,6 @@ const app = express();
 app.use(cors());
 
 const httpServer = createServer(app);
-const QUEUE_KEY = "queue:waiting";
 
 // Initialize Redis first
 initRedis().then(() => {
@@ -26,6 +30,11 @@ initRedis().then(() => {
     },
     adapter: createAdapter(pubClient, subClient),
   });
+
+  // Periodic cleanup of ghost users (every 30 seconds)
+  setInterval(() => {
+    cleanupGhostUsers(io);
+  }, 30000);
 
   io.on("connection", async (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -40,58 +49,23 @@ initRedis().then(() => {
 
     // 2. Handle Find Match
     socket.on("match:find", async () => {
-      console.log(`🔎 ${socket.id} is looking for a match...`);
-
-      // Remove myself from queue first to prevent duplicates
-      await redisClient.sRem(QUEUE_KEY, socket.id);
-
-      let partnerId: string | null = null;
-      let partnerSocket: any = null;
-
-      // LOOP: Keep popping from Redis until we find a LIVE user
-      while (true) {
-        partnerId = await redisClient.sPop(QUEUE_KEY);
-
-        if (!partnerId) break; // Queue is empty
-
-        if (partnerId === socket.id) continue; // Skip self
-
-        // Check if user is actually connected
-        partnerSocket = io.sockets.sockets.get(partnerId);
-
-        if (partnerSocket) {
-          // Found a live user!
-          break;
-        } else {
-          console.log(`👻 Found ghost user ${partnerId}, cleaning up...`);
-          // Loop continues to find the next person
-        }
-      }
-
-      // Handle Result
-      if (partnerSocket && partnerId) {
-        // --- MATCH FOUND ---
-        const roomId = uuidv4();
-        console.log(`🎉 MATCH: ${socket.id} + ${partnerId} -> Room ${roomId}`);
-
-        partnerSocket.join(roomId);
-        socket.join(roomId);
-
-        // Notify both
-        io.to(roomId).emit("match:success", {
-          roomId,
-          partnerId: "Stranger",
+      try {
+        await findMatch(socket, io);
+      } catch (error) {
+        console.error(`Error finding match for ${socket.id}:`, error);
+        socket.emit("match:error", {
+          message: "Failed to find a match. Please try again.",
         });
-      } else {
-        // --- NO MATCH FOUND ---
-        // Add myself to the queue and wait
-        await redisClient.sAdd(QUEUE_KEY, socket.id);
-        console.log(`⏳ ${socket.id} added to queue.`);
       }
     });
 
     // 3. Handle Send Message
     socket.on("message:send", async (data) => {
+      if (!data.roomId || !data.content) {
+        console.warn(`Invalid message from ${socket.id}`);
+        return;
+      }
+
       socket.to(data.roomId).emit("message:receive", {
         id: uuidv4(),
         senderId: socket.id,
@@ -103,33 +77,31 @@ initRedis().then(() => {
 
     // 4. Handle Typing
     socket.on("user:typing", (data) => {
-      socket
-        .to(data.roomId)
-        .emit("partner:typing", { isTyping: data.isTyping });
+      if (!data.roomId) return;
+
+      socket.to(data.roomId).emit("partner:typing", {
+        isTyping: data.isTyping ?? false,
+      });
     });
 
     // 5. Handle Skip (Leave Room)
     socket.on("match:skip", async () => {
-      const user = await getUser(socket.id);
-      if (user && user.currentRoomId) {
-        socket.to(user.currentRoomId).emit("partner:left");
-        socket.leave(user.currentRoomId);
-        await deleteRoom(user.currentRoomId);
+      try {
+        await handleLeaveMatch(socket, io);
+        socket.emit("match:left");
+      } catch (error) {
+        console.error(`Error handling skip for ${socket.id}:`, error);
       }
     });
 
     // 6. Handle Disconnect
     socket.on("disconnect", async () => {
-      // Remove from queue just in case
-      await redisClient.sRem(QUEUE_KEY, socket.id);
-
-      const user = await getUser(socket.id);
-      if (user?.currentRoomId) {
-        socket.to(user.currentRoomId).emit("partner:left");
-        await deleteRoom(user.currentRoomId);
+      try {
+        await handleDisconnect(socket, io);
+        await removeUser(socket.id);
+      } catch (error) {
+        console.error(`Error handling disconnect for ${socket.id}:`, error);
       }
-      await removeUser(socket.id);
-      console.log(`👋 Disconnected: ${socket.id}`);
     });
   }); // End of io.on("connection")
 
