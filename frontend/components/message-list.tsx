@@ -160,7 +160,7 @@ function MessageGroup({
               >
                 <div
                   className={cn(
-                    "px-5 py-3 text-sm sm:text-base leading-relaxed shadow-sm break-words transition-all relative",
+                    "px-4 py-2.5 text-sm sm:text-base leading-relaxed shadow-sm break-words transition-all relative",
                     // Colors
                     isOwn
                       ? "bg-gradient-to-br from-ani-green to-ani-green-light text-white"
@@ -175,21 +175,42 @@ function MessageGroup({
                     !isOwn && isLast && "rounded-bl-sm",
                   )}
                 >
-                  {/* --- RENDER QUOTED REPLY IF EXISTS --- */}
+                  {/* --- INSTAGRAM-STYLE QUOTED REPLY --- */}
                   {msg.replyTo && (
                     <div
                       className={cn(
-                        "mb-2 text-xs p-2 rounded-md bg-black/10 border-l-2",
-                        isOwn
-                          ? "border-white/50 text-white/90"
-                          : "border-ani-green/50 text-ani-text/80 bg-ani-bg",
+                        "mb-2 pl-3 pr-2 py-1.5 rounded-lg relative",
+                        isOwn ? "bg-white/20" : "bg-gray-100",
                       )}
                     >
-                      <div className="font-bold opacity-70 mb-0.5">
-                        {msg.replyTo.senderId === "me" ? "You" : "Stranger"}
-                      </div>
-                      <div className="truncate opacity-90">
-                        {msg.replyTo.content}
+                      {/* Left border line - Instagram style */}
+                      <div
+                        className={cn(
+                          "absolute left-0 top-0 bottom-0 w-1 rounded-full",
+                          isOwn ? "bg-white/50" : "bg-ani-green/80",
+                        )}
+                      />
+
+                      <div className="flex flex-col gap-0.5">
+                        {/* Replying to name */}
+                        <div
+                          className={cn(
+                            "text-[11px] font-semibold",
+                            isOwn ? "text-white/90" : "text-ani-green",
+                          )}
+                        >
+                          {msg.replyTo.senderId === "me" ? "You" : "Stranger"}
+                        </div>
+
+                        {/* Replied message content */}
+                        <div
+                          className={cn(
+                            "text-xs line-clamp-2",
+                            isOwn ? "text-white/80" : "text-gray-600",
+                          )}
+                        >
+                          {msg.replyTo.content}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -219,7 +240,7 @@ function MessageGroup({
 }
 
 // ------------------------------------------
-// 3. System Message Component (Unchanged)
+// 3. System Message Component
 // ------------------------------------------
 function SystemMessage({ content }: { content: string }) {
   return (
@@ -235,7 +256,7 @@ function SystemMessage({ content }: { content: string }) {
 }
 
 // ------------------------------------------
-// 4. Typing Indicator (Unchanged)
+// 4. Typing Indicator
 // ------------------------------------------
 function TypingIndicator() {
   return (
@@ -306,7 +327,7 @@ export function MessageList() {
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scrollbar-hide overflow-x-hidden"
+      className="h-full overflow-y-auto px-4 sm:px-6 py-6 scrollbar-hide"
     >
       <div className="max-w-3xl mx-auto min-h-full flex flex-col justify-end">
         {messages.length === 0 ? (
