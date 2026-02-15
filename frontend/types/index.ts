@@ -6,7 +6,7 @@ export interface User {
   joinedAt: number;
   lastActive: number;
 }
-
+//
 export interface Message {
   id: string;
   senderId: string;
