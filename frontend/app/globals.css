@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Colors */
+  --color-ani-bg: #f6f7f6;
+  --color-ani-dark: #0d1a0d;
+  --color-ani-green: #2dc653;
+  --color-ani-green-light: #4ade80;
+  --color-ani-text: #0d1a0d;
+  --color-ani-muted: #6b7a6b;
+
+  /* Fonts */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Border Radius */
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.75rem;
+  --radius-4xl: 2rem;
+
+  /* Box Shadow */
+  --shadow-card: 0 18px 40px rgba(13, 26, 13, 0.1);
+  --shadow-card-sm: 0 8px 24px rgba(13, 26, 13, 0.08);
+  --shadow-card-lg: 0 24px 56px rgba(13, 26, 13, 0.14);
+
+  /* Animations */
+  --animate-pulse-ring: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1)
+    infinite;
+  --animate-slide-up: slide-up 0.5s ease-out forwards;
+  --animate-bounce-subtle: bounce-subtle 2s ease-in-out infinite;
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+  @keyframes slide-up {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes bounce-subtle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+}
+
+/* Legacy Utilities 
+  Tailwind 4 usually handles this automatically, but we keep these
+  custom classes just in case.
+*/
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+/* Base Styles */
+@layer base {
+  body {
+    background-color: var(--color-ani-bg);
+    color: var(--color-ani-text);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+}
