@@ -1,24 +1,17 @@
+// lib/redis.ts
 import { createClient } from "redis";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
-// 1. Main Client for Data (Users, Rooms, Queue)
-export const redisClient = createClient({ url: REDIS_URL });
-
-// 2. Pub/Sub Clients for Socket.IO Adapter
 export const pubClient = createClient({ url: REDIS_URL });
 export const subClient = pubClient.duplicate();
+export const redisClient = pubClient.duplicate(); // <--- Make sure you export this!
 
-redisClient.on("error", (err) => console.error("Redis Client Error", err));
-
-export const initRedis = async () => {
+export async function initRedis() {
   await Promise.all([
-    redisClient.connect(),
     pubClient.connect(),
     subClient.connect(),
+    redisClient.connect(),
   ]);
-  console.log("✅ Redis connected (Data & Pub/Sub)");
-};
+  console.log("✅ Redis Connected");
+}
