@@ -5,7 +5,7 @@ import { getUser, saveUser, deleteRoom } from "./store";
 
 // Multiple waiting rooms for distribution
 const QUEUE_ROOMS = ["queue:room1", "queue:room2", "queue:room3"];
-const MATCH_HISTORY_PREFIX = "match:history:";
+// const MATCH_HISTORY_PREFIX = "match:history:";
 const MATCH_COUNT_PREFIX = "match:count:";
 const MATCH_HISTORY_EXPIRY = 60 * 60 * 3;
 const MAX_RETRY_ATTEMPTS = 8;
