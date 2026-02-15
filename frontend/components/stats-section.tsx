@@ -1,30 +1,30 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Users, MessageCircle, Zap } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import { Users, MessageCircle, Zap } from "lucide-react";
 
 const stats = [
   {
     icon: Users,
-    value: '12K+',
-    label: 'Online now',
+    value: "",
+    label: "Online now",
   },
   {
     icon: MessageCircle,
-    value: '3M+',
-    label: 'Matches this week',
+    value: "",
+    label: "Matches this week",
   },
   {
     icon: Zap,
-    value: '<1s',
-    label: 'Avg. wait time',
+    value: "",
+    label: "Avg. wait time",
   },
 ];
 
 export function StatsSection() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -33,31 +33,37 @@ export function StatsSection() {
           observer.disconnect();
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
-    
+
     if (sectionRef.current) {
       observer.observe(sectionRef.current);
     }
-    
+
     return () => observer.disconnect();
   }, []);
-  
+
   return (
-    <section ref={sectionRef} className="py-20 sm:py-32 px-4 sm:px-6 bg-ani-dark relative overflow-hidden">
+    <section
+      ref={sectionRef}
+      className="py-20 sm:py-32 px-4 sm:px-6 bg-ani-dark relative overflow-hidden"
+    >
       {/* Background Pattern */}
-      <div 
+      <div
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
-          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
+          backgroundImage:
+            "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
         }}
       />
-      
+
       <div className="max-w-6xl mx-auto relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Visual */}
-          <div className={`relative order-2 lg:order-1 transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
+          <div
+            className={`relative order-2 lg:order-1 transition-all duration-700 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-12"}`}
+          >
             <div className="relative">
               {/* Main Circle */}
               <div className="w-64 h-64 sm:w-80 sm:h-80 mx-auto rounded-full bg-gradient-to-br from-ani-green/20 to-ani-green/5 flex items-center justify-center">
@@ -67,25 +73,36 @@ export function StatsSection() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Floating Avatars */}
               <div className="absolute top-0 left-1/4 w-12 h-12 rounded-full bg-white shadow-card flex items-center justify-center animate-bounce-subtle">
                 <span className="text-sm font-medium text-ani-text">A</span>
               </div>
-              <div className="absolute top-1/4 right-0 w-10 h-10 rounded-full bg-white shadow-card flex items-center justify-center animate-bounce-subtle" style={{ animationDelay: '0.5s' }}>
+              <div
+                className="absolute top-1/4 right-0 w-10 h-10 rounded-full bg-white shadow-card flex items-center justify-center animate-bounce-subtle"
+                style={{ animationDelay: "0.5s" }}
+              >
                 <span className="text-sm font-medium text-ani-text">B</span>
               </div>
-              <div className="absolute bottom-1/4 left-0 w-14 h-14 rounded-full bg-white shadow-card flex items-center justify-center animate-bounce-subtle" style={{ animationDelay: '1s' }}>
+              <div
+                className="absolute bottom-1/4 left-0 w-14 h-14 rounded-full bg-white shadow-card flex items-center justify-center animate-bounce-subtle"
+                style={{ animationDelay: "1s" }}
+              >
                 <span className="text-sm font-medium text-ani-text">C</span>
               </div>
-              <div className="absolute bottom-0 right-1/4 w-11 h-11 rounded-full bg-white shadow-card flex items-center justify-center animate-bounce-subtle" style={{ animationDelay: '1.5s' }}>
+              <div
+                className="absolute bottom-0 right-1/4 w-11 h-11 rounded-full bg-white shadow-card flex items-center justify-center animate-bounce-subtle"
+                style={{ animationDelay: "1.5s" }}
+              >
                 <span className="text-sm font-medium text-ani-text">D</span>
               </div>
             </div>
           </div>
-          
+
           {/* Right Content */}
-          <div className={`order-1 lg:order-2 transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'}`}>
+          <div
+            className={`order-1 lg:order-2 transition-all duration-700 delay-200 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}
+          >
             <span className="font-mono text-xs uppercase tracking-widest text-white/50 mb-4 block">
               Live Community
             </span>
@@ -95,7 +112,7 @@ export function StatsSection() {
             <p className="text-white/60 text-lg leading-relaxed mb-10">
               From late-night thoughts to random jokes—someones always here.
             </p>
-            
+
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-4 sm:gap-6">
               {stats.map((stat, index) => (
