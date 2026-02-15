@@ -18,7 +18,9 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 const httpServer = createServer(app);
 
 // Initialize Redis first

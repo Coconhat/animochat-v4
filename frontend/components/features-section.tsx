@@ -1,33 +1,33 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Shield, Shuffle, LogOut } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import { Shield, Shuffle, LogOut } from "lucide-react";
 
 const features = [
   {
     icon: Shield,
-    title: 'Truly anonymous',
-    description: 'No phone number. No email. No names. Just a conversation.',
-    size: 'large',
+    title: "Truly anonymous",
+    description: "No phone number. No email. No names. Just a conversation.",
+    size: "large",
   },
   {
     icon: Shuffle,
-    title: 'Random match',
-    description: 'Meet someone new in one tap.',
-    size: 'small',
+    title: "Random match",
+    description: "Meet someone new in one tap.",
+    size: "small",
   },
   {
     icon: LogOut,
-    title: 'Leave anytime',
-    description: 'End or skip without drama.',
-    size: 'small',
+    title: "Leave anytime",
+    description: "End or skip without drama.",
+    size: "small",
   },
 ];
 
 export function FeaturesSection() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -36,21 +36,23 @@ export function FeaturesSection() {
           observer.disconnect();
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
-    
+
     if (sectionRef.current) {
       observer.observe(sectionRef.current);
     }
-    
+
     return () => observer.disconnect();
   }, []);
-  
+
   return (
     <section ref={sectionRef} className="py-20 sm:py-32 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className={`text-center mb-12 sm:mb-16 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div
+          className={`text-center mb-12 sm:mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+        >
           <span className="font-mono text-xs uppercase tracking-widest text-ani-muted mb-4 block">
             Why AniMoChat
           </span>
@@ -58,13 +60,15 @@ export function FeaturesSection() {
             Chat without boundaries
           </h2>
         </div>
-        
+
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Large Card */}
           <div
             className={`md:row-span-2 bg-white rounded-3xl border border-ani-border shadow-card p-6 sm:p-8 transition-all duration-700 delay-100 ${
-              isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
+              isVisible
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-12"
             }`}
           >
             <div className="w-14 h-14 rounded-2xl bg-ani-green/10 flex items-center justify-center mb-6">
@@ -87,16 +91,20 @@ export function FeaturesSection() {
                   </div>
                 ))}
               </div>
-              <span className="text-sm text-ani-muted">+2.5M anonymous chats</span>
+              <span className="text-sm text-ani-muted">
+                +10 Millions messages sent.
+              </span>
             </div>
           </div>
-          
+
           {/* Small Cards */}
           {features.slice(1).map((feature, index) => (
             <div
               key={feature.title}
               className={`bg-white rounded-3xl border border-ani-border shadow-card p-6 sm:p-8 transition-all duration-700 ${
-                isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
+                isVisible
+                  ? "opacity-100 translate-x-0"
+                  : "opacity-0 translate-x-12"
               }`}
               style={{ transitionDelay: `${(index + 2) * 100}ms` }}
             >
