@@ -1,0 +1,3 @@
+module.exports=[33290,a=>{"use strict";var b=a.i(7997);function c({children:a}){return(0,b.jsx)("html",{lang:"en",children:(0,b.jsx)("body",{className:"min-h-screen bg-ani-bg",children:a})})}a.s(["default",()=>c,"metadata",0,{title:"AniMoChat - Anonymous Chat",description:"Anonymous. Random. No accounts needed. Chat freely with strangers around the world.",keywords:["anonymous chat","random chat","stranger chat","online chat","no signup"],authors:[{name:"AniMoChat"}],openGraph:{title:"AniMoChat - Anonymous Chat",description:"Anonymous. Random. No accounts needed.",type:"website"}}])}];
+
+//# sourceMappingURL=app_layout_tsx_271801d7._.js.map

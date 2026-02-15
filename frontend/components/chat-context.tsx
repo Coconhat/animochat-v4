@@ -22,7 +22,7 @@ interface ChatContextType {
   isPartnerTyping: boolean;
   onlineCount: number;
   replyingTo: Message | null;
-  SetReplyingTo: (msg: Message | null) => void;
+  setReplyingTo: (msg: Message | null) => void;
   connect: () => void;
   disconnect: () => void;
   findMatch: () => void;
