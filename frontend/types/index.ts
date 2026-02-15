@@ -12,7 +12,12 @@ export interface Message {
   senderId: string;
   content: string;
   timestamp: number;
-  type: 'text' | 'system' | 'typing';
+  type: "text" | "system" | "typing";
+  replyTo?: {
+    id: string;
+    content: string;
+    senderId: string;
+  };
 }
 
 export interface ChatRoom {
@@ -23,13 +28,13 @@ export interface ChatRoom {
   messages: Message[];
 }
 
-export type ConnectionStatus = 
-  | 'idle' 
-  | 'connecting' 
-  | 'finding' 
-  | 'matched' 
-  | 'disconnected' 
-  | 'error';
+export type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "finding"
+  | "matched"
+  | "disconnected"
+  | "error";
 
 export interface MatchState {
   status: ConnectionStatus;
@@ -45,22 +50,22 @@ export interface TypingState {
 
 // Socket Events
 export interface ServerToClientEvents {
-  'connect': () => void;
-  'disconnect': (reason: string) => void;
-  'matched': (data: { roomId: string; partnerId: string }) => void;
-  'message': (message: Message) => void;
-  'partner-typing': (data: { isTyping: boolean }) => void;
-  'partner-disconnected': () => void;
-  'waiting': () => void;
-  'error': (error: { message: string }) => void;
-  'online-count': (count: number) => void;
+  connect: () => void;
+  disconnect: (reason: string) => void;
+  matched: (data: { roomId: string; partnerId: string }) => void;
+  message: (message: Message) => void;
+  "partner-typing": (data: { isTyping: boolean }) => void;
+  "partner-disconnected": () => void;
+  waiting: () => void;
+  error: (error: { message: string }) => void;
+  "online-count": (count: number) => void;
 }
 
 export interface ClientToServerEvents {
-  'find-match': () => void;
-  'cancel-match': () => void;
-  'next-match': () => void;
-  'send-message': (content: string) => void;
-  'typing': (isTyping: boolean) => void;
-  'leave-room': () => void;
+  "find-match": () => void;
+  "cancel-match": () => void;
+  "next-match": () => void;
+  "send-message": (content: string) => void;
+  typing: (isTyping: boolean) => void;
+  "leave-room": () => void;
 }
