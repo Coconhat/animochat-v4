@@ -21,6 +21,8 @@ interface ChatContextType {
   messages: Message[];
   isPartnerTyping: boolean;
   onlineCount: number;
+  replyingTo: Message | null;
+  SetReplyingTo: (msg: Message | null) => void;
   connect: () => void;
   disconnect: () => void;
   findMatch: () => void;
@@ -39,6 +41,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
 
@@ -76,6 +79,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setStatus("matched");
       setMessages([]);
       setIsPartnerTyping(false);
+      setReplyingTo(null);
     });
 
     socket.on("message:receive", (msg) => {
@@ -117,8 +121,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const leaveRoom = useCallback(() => {
-    socketRef.current?.emit("room:leave");
-    setRoomId(null);
+    socketRef.current?.emit("match:skip");
     setMessages([]);
     setStatus("idle");
   }, []);
@@ -139,12 +142,24 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         content: content.trim(),
         timestamp: Date.now(),
         type: "text",
+        replyTo: replyingTo
+          ? {
+              id: replyingTo.id,
+              content: replyingTo.content,
+              senderId: replyingTo.senderId,
+            }
+          : undefined,
       };
       setMessages((prev) => [...prev, msg]);
 
-      socketRef.current?.emit("message:send", { roomId, content });
+      socketRef.current?.emit("message:send", {
+        roomId,
+        content,
+        replyTo: replyingTo,
+      });
+      setReplyingTo(null);
     },
-    [roomId],
+    [roomId, replyingTo],
   );
 
   const sendTyping = useCallback(
@@ -164,6 +179,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     messages,
     isPartnerTyping,
     onlineCount: 0, // Implement later
+    replyingTo,
+    setReplyingTo,
     connect,
     disconnect,
     findMatch,

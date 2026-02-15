@@ -72,6 +72,7 @@ initRedis().then(() => {
         content: data.content,
         timestamp: Date.now(),
         type: "text",
+        replyTo: data.replyTo || null,
       });
     });
 

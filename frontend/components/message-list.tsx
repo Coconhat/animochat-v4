@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useChat } from "@/components/chat-context";
-import { Shield, Sparkles } from "lucide-react";
+import { Shield, Sparkles, Reply } from "lucide-react";
 import type { Message } from "@/types";
 
 // Utility for clean class merging
@@ -11,7 +11,108 @@ function cn(...classes: (string | undefined | null | false)[]) {
 }
 
 // ------------------------------------------
-// 1. Message Group Component
+// 1. Swipeable Message Bubble Wrapper
+// ------------------------------------------
+function SwipeableMessage({
+  message,
+  isOwn,
+  isFirst,
+  isLast,
+  children,
+}: {
+  message: Message;
+  isOwn: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  children: React.ReactNode;
+}) {
+  const { setReplyingTo } = useChat();
+
+  // Touch State
+  const [dragX, setDragX] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const threshold = 50; // Pixels to trigger reply
+
+  // --- Touch Handlers (Mobile) ---
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    isDragging.current = true;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartX.current || !isDragging.current) return;
+
+    const currentX = e.targetTouches[0].clientX;
+    const diff = currentX - touchStartX.current;
+
+    // Only allow dragging to the right (positive diff) and clamp it
+    if (diff > 0 && diff < 100) {
+      setDragX(diff);
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (dragX > threshold) {
+      // Trigger Reply
+      setReplyingTo(message);
+      // Haptic feedback if available
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    }
+    // Reset
+    setDragX(0);
+    touchStartX.current = null;
+    isDragging.current = false;
+  };
+
+  // --- Render ---
+  return (
+    <div
+      className="relative group w-fit"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Reply Icon Indicator (Mobile Swipe) */}
+      <div
+        className="absolute left-[-40px] top-1/2 -translate-y-1/2 flex items-center justify-center transition-opacity duration-200"
+        style={{
+          opacity: dragX > 20 ? 1 : 0,
+          transform: `translateX(${dragX > threshold ? 10 : 0}px)`,
+        }}
+      >
+        <div className="bg-ani-muted/20 p-1.5 rounded-full">
+          <Reply className="w-4 h-4 text-ani-muted" />
+        </div>
+      </div>
+
+      {/* Reply Button (Desktop Hover) */}
+      <div
+        className={cn(
+          "absolute top-1/2 -translate-y-1/2 hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer p-2",
+          isOwn ? "left-[-40px]" : "right-[-40px]",
+        )}
+        onClick={() => setReplyingTo(message)}
+        title="Reply"
+      >
+        <Reply className="w-4 h-4 text-ani-muted hover:text-ani-text transition-colors" />
+      </div>
+
+      {/* The Actual Bubble content, moved by drag */}
+      <div
+        className="transition-transform duration-200 ease-out will-change-transform"
+        style={{ transform: `translateX(${dragX}px)` }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------
+// 2. Message Group Component
 // ------------------------------------------
 function MessageGroup({
   messages,
@@ -20,17 +121,16 @@ function MessageGroup({
   messages: Message[];
   isOwn: boolean;
 }) {
-  // Only show avatar for the partner
   const showAvatar = !isOwn;
 
   return (
     <div
       className={cn(
         "flex w-full mb-4 animate-slide-up",
-        isOwn ? "justify-end" : "justify-start", // <--- RESTORED LEFT/RIGHT
+        isOwn ? "justify-end" : "justify-start",
       )}
     >
-      {/* Partner Avatar (Left Side, Bottom Aligned) */}
+      {/* Partner Avatar */}
       {showAvatar && (
         <div className="flex flex-col justify-end mr-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ani-muted to-ani-text flex items-center justify-center shadow-md">
@@ -43,7 +143,7 @@ function MessageGroup({
       <div
         className={cn(
           "flex flex-col max-w-[80%] sm:max-w-[70%]",
-          isOwn ? "items-end" : "items-start", // <--- ALIGN TEXT TO CORRECT SIDE
+          isOwn ? "items-end" : "items-start",
         )}
       >
         {messages.map((msg, index) => {
@@ -51,38 +151,57 @@ function MessageGroup({
           const isLast = index === messages.length - 1;
 
           return (
-            <div key={msg.id} className="group relative mb-1 w-fit">
-              {/* Bubble */}
-              <div
-                className={cn(
-                  "px-5 py-3 text-sm sm:text-base leading-relaxed shadow-sm break-words transition-all",
-                  // Color & Base Shape
-                  isOwn
-                    ? "bg-gradient-to-br from-ani-green to-ani-green-light text-white"
-                    : "bg-white border border-ani-border text-ani-text",
-
-                  // Dynamic Border Radius (Squircle Logic)
-                  "rounded-2xl",
-
-                  // 1. Fix the corners where messages stack
-                  isOwn && !isFirst && "rounded-tr-md", // Right side stacking
-                  isOwn && !isLast && "rounded-br-md",
-
-                  !isOwn && !isFirst && "rounded-tl-md", // Left side stacking
-                  !isOwn && !isLast && "rounded-bl-md",
-
-                  // 2. Give the "Tail" to the very last message
-                  isOwn && isLast && "rounded-br-sm",
-                  !isOwn && isLast && "rounded-bl-sm",
-                )}
+            <div key={msg.id} className="mb-1">
+              <SwipeableMessage
+                message={msg}
+                isOwn={isOwn}
+                isFirst={isFirst}
+                isLast={isLast}
               >
-                {msg.content}
-              </div>
+                <div
+                  className={cn(
+                    "px-5 py-3 text-sm sm:text-base leading-relaxed shadow-sm break-words transition-all relative",
+                    // Colors
+                    isOwn
+                      ? "bg-gradient-to-br from-ani-green to-ani-green-light text-white"
+                      : "bg-white border border-ani-border text-ani-text",
+                    // Shapes
+                    "rounded-2xl",
+                    isOwn && !isFirst && "rounded-tr-md",
+                    isOwn && !isLast && "rounded-br-md",
+                    !isOwn && !isFirst && "rounded-tl-md",
+                    !isOwn && !isLast && "rounded-bl-md",
+                    isOwn && isLast && "rounded-br-sm",
+                    !isOwn && isLast && "rounded-bl-sm",
+                  )}
+                >
+                  {/* --- RENDER QUOTED REPLY IF EXISTS --- */}
+                  {msg.replyTo && (
+                    <div
+                      className={cn(
+                        "mb-2 text-xs p-2 rounded-md bg-black/10 border-l-2",
+                        isOwn
+                          ? "border-white/50 text-white/90"
+                          : "border-ani-green/50 text-ani-text/80 bg-ani-bg",
+                      )}
+                    >
+                      <div className="font-bold opacity-70 mb-0.5">
+                        {msg.replyTo.senderId === "me" ? "You" : "Stranger"}
+                      </div>
+                      <div className="truncate opacity-90">
+                        {msg.replyTo.content}
+                      </div>
+                    </div>
+                  )}
+
+                  {msg.content}
+                </div>
+              </SwipeableMessage>
             </div>
           );
         })}
 
-        {/* Timestamp - ONLY SHOW ONCE AT THE BOTTOM OF THE GROUP */}
+        {/* Timestamp */}
         <div
           className={cn(
             "text-[10px] text-ani-muted mt-1 opacity-70",
@@ -100,7 +219,7 @@ function MessageGroup({
 }
 
 // ------------------------------------------
-// 2. System Message Component
+// 3. System Message Component (Unchanged)
 // ------------------------------------------
 function SystemMessage({ content }: { content: string }) {
   return (
@@ -116,7 +235,7 @@ function SystemMessage({ content }: { content: string }) {
 }
 
 // ------------------------------------------
-// 3. Typing Indicator
+// 4. Typing Indicator (Unchanged)
 // ------------------------------------------
 function TypingIndicator() {
   return (
@@ -133,13 +252,12 @@ function TypingIndicator() {
 }
 
 // ------------------------------------------
-// 4. Main List Component
+// 5. Main List Component
 // ------------------------------------------
 export function MessageList() {
   const { messages, isPartnerTyping } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll logic
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -149,12 +267,9 @@ export function MessageList() {
     }
   }, [messages, isPartnerTyping]);
 
-  // --- Grouping Logic ---
   const groupedMessages = messages.reduce(
     (acc, msg) => {
       const lastGroup = acc[acc.length - 1];
-
-      // System messages are always their own group
       if (msg.type === "system") {
         acc.push({
           type: "system",
@@ -164,8 +279,6 @@ export function MessageList() {
         });
         return acc;
       }
-
-      // If previous group exists AND is the same sender, add to it
       if (
         lastGroup &&
         lastGroup.type !== "system" &&
@@ -173,7 +286,6 @@ export function MessageList() {
       ) {
         lastGroup.messages.push(msg);
       } else {
-        // Create new group
         acc.push({
           type: "user",
           senderId: msg.senderId,
@@ -194,7 +306,7 @@ export function MessageList() {
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scrollbar-hide"
+      className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scrollbar-hide overflow-x-hidden"
     >
       <div className="max-w-3xl mx-auto min-h-full flex flex-col justify-end">
         {messages.length === 0 ? (
@@ -217,9 +329,7 @@ export function MessageList() {
                   />
                 );
               }
-
               const isOwn = group.senderId === "me";
-
               return (
                 <MessageGroup
                   key={group.id}
@@ -228,7 +338,6 @@ export function MessageList() {
                 />
               );
             })}
-
             {isPartnerTyping && <TypingIndicator />}
           </>
         )}
