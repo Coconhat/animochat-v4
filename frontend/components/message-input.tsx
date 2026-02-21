@@ -80,8 +80,16 @@ export function MessageInput() {
       sendTyping(false);
       setReplyingTo(null); // Clear reply after sending
 
-      // Focus back on input
-      inputRef.current?.focus();
+      // Check if the user is on mobile or pc
+      const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+
+      if (isTouchDevice) {
+        // On mobile, blur the input to hide the keyboard after sending
+        inputRef.current?.blur();
+      } else {
+        // On desktop, keep the input focused for faster typing
+        inputRef.current?.focus();
+      }
     },
     [message, sendMessage, sendTyping, setReplyingTo],
   );
