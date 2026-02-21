@@ -59,6 +59,7 @@ export function MessageInput() {
     findMatch,
     replyingTo,
     setReplyingTo,
+    partnerHasLeft,
   } = useChat();
 
   const isMatched = status === "matched";
@@ -168,6 +169,29 @@ export function MessageInput() {
                 Finding someone to chat with...
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  //  Partner Left State - Disable Chat
+  if (isMatched && partnerHasLeft) {
+    return (
+      <div className="border-t border-ani-border bg-white">
+        <div className="px-4 sm:px-6 py-4">
+          <div className="max-w-3xl mx-auto flex flex-col items-center gap-3">
+            <p className="text-ani-muted text-sm font-medium">
+              The chat has ended 😔.
+            </p>
+            <button
+              onClick={nextMatch}
+              className="w-full bg-linear-to-br from-gray-800 to-black text-white font-display font-semibold text-lg py-4 rounded-2xl shadow-card hover:shadow-card-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-3"
+            >
+              <span>Find a New Stranger</span>
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <SkipForward className="w-4 h-4" />
+              </div>
+            </button>
           </div>
         </div>
       </div>

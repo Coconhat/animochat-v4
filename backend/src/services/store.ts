@@ -13,17 +13,18 @@ const HISTORY_TTL = 60 * 60; // 1 hour
 export const saveUser = async (socketId: string, userData: Partial<User>) => {
   const key = `${USER_PREFIX}${socketId}`;
 
-  // FIX: Redis only accepts strings. We must convert Booleans/Numbers to Strings.
   const processedData: Record<string, string> = {};
 
   Object.entries(userData).forEach(([field, value]) => {
-    // Convert boolean/number to string safely
-    processedData[field] = String(value);
+    if (value === null || value === undefined) {
+      processedData[field] = "null";
+    } else {
+      processedData[field] = String(value);
+    }
   });
 
-  // Now we pass an object of strings, which is valid for hSet
   await redisClient.hSet(key, processedData);
-  await redisClient.expire(key, 86400); // Cleanup after 24h
+  await redisClient.expire(key, 86400);
 };
 
 export const getUser = async (socketId: string): Promise<User | null> => {

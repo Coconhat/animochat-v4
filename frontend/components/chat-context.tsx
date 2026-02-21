@@ -22,6 +22,7 @@ interface ChatContextType {
   isPartnerTyping: boolean;
   onlineCount: number;
   replyingTo: Message | null;
+  partnerHasLeft?: boolean;
   setReplyingTo: (msg: Message | null) => void;
   connect: () => void;
   disconnect: () => void;
@@ -42,6 +43,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [partnerHasLeft, setPartnerHasLeft] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
 
@@ -80,6 +82,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages([]);
       setIsPartnerTyping(false);
       setReplyingTo(null);
+      setPartnerHasLeft(false);
+    });
+
+    socket.on("partner:left", () => {
+      setPartnerHasLeft(true);
+      setIsPartnerTyping(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          senderId: "system",
+          content: "Stranger has disconnected.",
+          timestamp: Date.now(),
+          type: "system",
+        },
+      ]);
     });
 
     socket.on("message:receive", (msg) => {
@@ -180,6 +198,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     isPartnerTyping,
     onlineCount: 0, // Implement later
     replyingTo,
+    partnerHasLeft,
     setReplyingTo,
     connect,
     disconnect,

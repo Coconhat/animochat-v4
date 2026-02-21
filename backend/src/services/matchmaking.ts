@@ -306,8 +306,8 @@ export async function handleLeaveMatch(
   if (user?.currentRoomId) {
     const roomId = user.currentRoomId;
 
-    // Notify partner
-    socket.to(roomId).emit("partner:left");
+    // the socket has already lost its rooms. io.to() guarantees delivery.
+    io.to(roomId).emit("partner:left");
 
     // Leave room
     socket.leave(roomId);
@@ -320,10 +320,9 @@ export async function handleLeaveMatch(
           userId: partnerSocket.id,
           socketId: partnerSocket.id,
           isBusy: false,
-          currentRoomId: undefined,
+          currentRoomId: null,
           connectedAt: Date.now(),
         });
-        // Don't auto-add partner to queue - let them manually search again
       }
     }
 
@@ -335,11 +334,9 @@ export async function handleLeaveMatch(
       userId: socket.id,
       socketId: socket.id,
       isBusy: false,
-      currentRoomId: undefined,
+      currentRoomId: null,
       connectedAt: Date.now(),
     });
-
-    console.log(`👋 ${socket.id} left room ${roomId}`);
   }
 }
 
