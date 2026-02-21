@@ -150,6 +150,9 @@ export function MessageInput() {
   if (isFinding) {
     return null;
   }
+  if (isIdle) {
+    return null;
+  }
 
   return (
     <div className="border-t border-ani-border bg-white">
@@ -190,13 +193,11 @@ export function MessageInput() {
               onKeyDown={handleKeyDown}
               disabled={!isActive}
               placeholder={
-                isIdle
-                  ? "Tap button to start a chat →"
-                  : isEnded
-                    ? "Chat ended. Tap button for next →"
-                    : replyingTo
-                      ? "Type your reply..."
-                      : "Type a message..."
+                isEnded
+                  ? "Chat ended. Tap button for next →"
+                  : replyingTo
+                    ? "Type your reply..."
+                    : "Type a message..."
               }
               className={`flex-1 bg-transparent text-ani-text placeholder:text-ani-muted text-sm sm:text-base outline-none min-w-0 transition-opacity ${
                 !isActive ? "opacity-60 cursor-not-allowed select-none" : ""
