@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useChat } from "@/components/chat-context";
-import { Send, SkipForward, X, Search, Loader2 } from "lucide-react";
+import { Send, SkipForward, X, Search } from "lucide-react"; // Removed Loader2
 
 // ------------------------------------------
 // Reply Preview Bar Component
@@ -60,7 +60,6 @@ export function MessageInput() {
     partnerHasLeft,
   } = useChat();
 
-  // ✅ Clean state booleans
   const isIdle = status === "idle";
   const isFinding = status === "finding";
   const isActive = status === "matched" && !partnerHasLeft;
@@ -99,7 +98,6 @@ export function MessageInput() {
       // Route the button click based on current state
       if (isIdle) return findMatch();
       if (isEnded) return nextMatch();
-      if (isFinding) return; // Do nothing while loading
 
       // Normal send message flow
       if (!message.trim()) return;
@@ -119,7 +117,6 @@ export function MessageInput() {
     [
       isIdle,
       isEnded,
-      isFinding,
       message,
       findMatch,
       nextMatch,
@@ -149,6 +146,10 @@ export function MessageInput() {
     },
     [handleSubmit, replyingTo, setReplyingTo],
   );
+
+  if (isFinding) {
+    return null;
+  }
 
   return (
     <div className="border-t border-ani-border bg-white">
@@ -206,19 +207,15 @@ export function MessageInput() {
             {/* 3. Primary Action Button - Morphs based on state */}
             <button
               type="submit"
-              disabled={isFinding || (isActive && !message.trim())}
+              disabled={isActive && !message.trim()}
               className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
-                isFinding
-                  ? "bg-ani-muted/10 text-ani-muted cursor-not-allowed"
-                  : isIdle || isEnded
-                    ? "bg-gray-800 hover:bg-black text-white hover:scale-105 hover:shadow-lg"
-                    : "bg-gradient-to-br from-ani-green to-ani-green-light text-white hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                isIdle || isEnded
+                  ? "bg-gray-800 hover:bg-black text-white hover:scale-105 hover:shadow-lg"
+                  : "bg-gradient-to-br from-ani-green to-ani-green-light text-white hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               }`}
             >
               {isIdle ? (
                 <Search className="w-5 h-5" />
-              ) : isFinding ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
               ) : isEnded ? (
                 <SkipForward className="w-5 h-5" />
               ) : (
