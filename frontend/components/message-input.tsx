@@ -2,8 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useChat } from "@/components/chat-context";
-import { Send, Mic, Smile, SkipForward, X } from "lucide-react";
-import next from "next";
+import { Send, SkipForward, X, Search, Loader2 } from "lucide-react";
 
 // ------------------------------------------
 // Reply Preview Bar Component
@@ -47,7 +46,6 @@ function ReplyPreviewBar() {
 // ------------------------------------------
 export function MessageInput() {
   const [message, setMessage] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,8 +60,11 @@ export function MessageInput() {
     partnerHasLeft,
   } = useChat();
 
-  const isMatched = status === "matched";
+  // ✅ Clean state booleans
+  const isIdle = status === "idle";
   const isFinding = status === "finding";
+  const isActive = status === "matched" && !partnerHasLeft;
+  const isEnded = status === "matched" && partnerHasLeft;
 
   // Auto-focus input when replying
   useEffect(() => {
@@ -72,6 +73,7 @@ export function MessageInput() {
     }
   }, [replyingTo]);
 
+  // Handle confirm skip timeout
   useEffect(() => {
     if (confirmSkip) {
       const timer = setTimeout(() => {
@@ -89,29 +91,42 @@ export function MessageInput() {
       setConfirmSkip(true);
     }
   }, [confirmSkip, nextMatch]);
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
 
+      // Route the button click based on current state
+      if (isIdle) return findMatch();
+      if (isEnded) return nextMatch();
+      if (isFinding) return; // Do nothing while loading
+
+      // Normal send message flow
       if (!message.trim()) return;
 
       sendMessage(message);
       setMessage("");
       sendTyping(false);
-      setReplyingTo(null); // Clear reply after sending
+      setReplyingTo(null);
 
-      // Check if the user is on mobile or pc
       const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
-
       if (isTouchDevice) {
-        // On mobile, blur the input to hide the keyboard after sending
         inputRef.current?.blur();
       } else {
-        // On desktop, keep the input focused for faster typing
         inputRef.current?.focus();
       }
     },
-    [message, sendMessage, sendTyping, setReplyingTo],
+    [
+      isIdle,
+      isEnded,
+      isFinding,
+      message,
+      findMatch,
+      nextMatch,
+      sendMessage,
+      sendTyping,
+      setReplyingTo,
+    ],
   );
 
   const handleChange = useCallback(
@@ -126,9 +141,8 @@ export function MessageInput() {
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        handleSubmit(e);
+        handleSubmit(e as unknown as React.FormEvent);
       }
-      // ESC to cancel reply
       if (e.key === "Escape" && replyingTo) {
         setReplyingTo(null);
       }
@@ -136,129 +150,95 @@ export function MessageInput() {
     [handleSubmit, replyingTo, setReplyingTo],
   );
 
-  // Find Match Button (when not matched)
-  if (!isMatched && !isFinding) {
-    return (
-      <div className="border-t border-ani-border bg-white">
-        <div className="px-4 sm:px-6 py-4">
-          <div className="max-w-3xl mx-auto">
-            <button
-              onClick={findMatch}
-              className="w-full bg-gradient-to-br from-ani-green to-ani-green-light text-white font-display font-semibold text-lg py-4 rounded-2xl shadow-card hover:shadow-card-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-3"
-            >
-              <span>Find a Match</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <Send className="w-4 h-4" />
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Finding Match State
-  if (isFinding) {
-    return (
-      <div className="border-t border-ani-border bg-white">
-        <div className="px-4 sm:px-6 py-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="w-full bg-white border border-ani-border rounded-2xl py-4 px-6 flex items-center justify-center gap-3">
-              <div className="w-5 h-5 border-2 border-ani-green border-t-transparent rounded-full animate-spin" />
-              <span className="text-ani-muted font-medium">
-                Finding someone to chat with...
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  //  Partner Left State - Disable Chat
-  if (isMatched && partnerHasLeft) {
-    return (
-      <div className="border-t border-ani-border bg-white">
-        <div className="px-4 sm:px-6 py-4">
-          <div className="max-w-3xl mx-auto flex flex-col items-center gap-3">
-            <p className="text-ani-muted text-sm font-medium">
-              The chat has ended 😔.
-            </p>
-            <button
-              onClick={nextMatch}
-              className="w-full bg-linear-to-br from-gray-800 to-black text-white font-display font-semibold text-lg py-4 rounded-2xl shadow-card hover:shadow-card-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-3"
-            >
-              <span>Find a New Stranger</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <SkipForward className="w-4 h-4" />
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Matched State - Show Input
   return (
     <div className="border-t border-ani-border bg-white">
-      {/* Reply Preview Bar */}
-      <ReplyPreviewBar />
+      {/* Only show reply bar if actively chatting */}
+      {isActive && <ReplyPreviewBar />}
 
-      {/* Input Area */}
+      {/* Smart Input Area */}
       <div className="px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto">
           <form
             onSubmit={handleSubmit}
-            className="flex items-center gap-2 sm:gap-3 bg-white border border-ani-border shadow-card rounded-2xl px-3 sm:px-4 py-2 sm:py-3"
+            className="flex items-center gap-2 sm:gap-3 bg-white border border-ani-border shadow-card rounded-2xl px-3 sm:px-4 py-2 sm:py-3 transition-all duration-300"
           >
-            <button
-              type="button"
-              onClick={handleSkipClick}
-              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0 ${
-                confirmSkip
-                  ? "bg-red-500 text-white shadow-md scale-105"
-                  : "bg-ani-muted/10 text-ani-muted hover:bg-ani-muted/20 hover:text-ani-text"
-              }`}
-              title={confirmSkip ? "Are you sure?" : "Find new match"}
-            >
-              {confirmSkip ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <SkipForward className="w-5 h-5" />
-              )}
-            </button>
-            {/* Text Input */}
+            {isActive && (
+              <button
+                type="button"
+                onClick={handleSkipClick}
+                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0 ${
+                  confirmSkip
+                    ? "bg-red-500 text-white shadow-md scale-105"
+                    : "bg-ani-muted/10 text-ani-muted hover:bg-ani-muted/20 hover:text-ani-text"
+                }`}
+                title={confirmSkip ? "Are you sure?" : "Find new match"}
+              >
+                {confirmSkip ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <SkipForward className="w-5 h-5" />
+                )}
+              </button>
+            )}
+
             <input
               ref={inputRef}
               type="text"
               value={message}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
+              disabled={!isActive}
               placeholder={
-                replyingTo ? "Type your reply..." : "Type a message..."
+                isIdle
+                  ? "Tap button to start a chat →"
+                  : isFinding
+                    ? "Searching for a stranger..."
+                    : isEnded
+                      ? "Chat ended. Tap button for next →"
+                      : replyingTo
+                        ? "Type your reply..."
+                        : "Type a message..."
               }
-              className="flex-1 bg-transparent text-ani-text placeholder:text-ani-muted text-sm sm:text-base outline-none min-w-0"
+              className={`flex-1 bg-transparent text-ani-text placeholder:text-ani-muted text-sm sm:text-base outline-none min-w-0 transition-opacity ${
+                !isActive ? "opacity-60 cursor-not-allowed select-none" : ""
+              }`}
               autoComplete="off"
             />
 
-            {/* Send Button */}
+            {/* 3. Primary Action Button - Morphs based on state */}
             <button
               type="submit"
-              disabled={!message.trim()}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-ani-green to-ani-green-light text-white flex items-center justify-center hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-shrink-0"
+              disabled={isFinding || (isActive && !message.trim())}
+              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
+                isFinding
+                  ? "bg-ani-muted/10 text-ani-muted cursor-not-allowed"
+                  : isIdle || isEnded
+                    ? "bg-gray-800 hover:bg-black text-white hover:scale-105 hover:shadow-lg"
+                    : "bg-gradient-to-br from-ani-green to-ani-green-light text-white hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              }`}
             >
-              <Send className="w-5 h-5" />
+              {isIdle ? (
+                <Search className="w-5 h-5" />
+              ) : isFinding ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : isEnded ? (
+                <SkipForward className="w-5 h-5" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
             </button>
 
-            {/* Next Button */}
-            <button
-              type="button"
-              onClick={nextMatch}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-ani-muted/10 text-ani-muted flex items-center justify-center hover:bg-ani-muted/20 hover:text-ani-text transition-colors flex-shrink-0"
-              title="Find new match"
-            >
-              <SkipForward className="w-5 h-5" />
-            </button>
+            {/* 4. Right Next Button - Only show during active chat */}
+            {isActive && (
+              <button
+                type="button"
+                onClick={nextMatch}
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-ani-muted/10 text-ani-muted flex items-center justify-center hover:bg-ani-muted/20 hover:text-ani-text transition-colors flex-shrink-0"
+                title="Find new match"
+              >
+                <SkipForward className="w-5 h-5" />
+              </button>
+            )}
           </form>
         </div>
       </div>
