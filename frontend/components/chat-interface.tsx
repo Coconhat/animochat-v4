@@ -11,15 +11,12 @@ export function ChatInterface() {
   const isMatched = status === "matched";
 
   return (
-    <div className="flex flex-col h-screen bg-ani-bg">
-      {/* Header - Fixed at top */}
-      <div className="flex-shrink-0">
+    <div className="flex flex-col h-dvh w-full bg-ani-bg overflow-hidden">
+      <div className="shrink-0 z-10">
         <ChatHeader />
       </div>
 
-      {/* Main Content - Scrollable middle section */}
-      <div className="flex-1 overflow-hidden">
-        {/* Status Indicator - Only show when not matched */}
+      <div className="flex-1 min-h-0 overflow-hidden relative z-0">
         {!isMatched && <StatusIndicator />}
 
         {/* Messages - Only show when matched */}
@@ -27,7 +24,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input Area - Fixed at bottom */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0 z-10 bg-white">
         <MessageInput />
       </div>
     </div>
